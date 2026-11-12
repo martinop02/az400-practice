@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>AZ-400 Practice Exam</title>
+<style>
+body{font:16px/1.5 system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem}
+fieldset{border:0;padding:0;margin:.5rem 0}
+legend{font-weight:600;padding:0}
+label{display:block;padding:.5rem .75rem;margin:.4rem 0;border:1px solid #8886;border-radius:.4rem;cursor:pointer}
+.ok{border-color:#2a2;background:#2a22}
+.ok::after{content:" ✓"}
+.bad{border-color:#d33;background:#d332}
+.bad::after{content:" ✗"}
+button{font:inherit;padding:.5rem 1.2rem}
+small{opacity:.7}
+code{background:#8883;padding:0 .25em;border-radius:.2em}
+</style>
+<main id="app"></main>
+<script>
+const P = "Processes and communications", S = "Source control strategy", B = "Build and release pipelines",
+  C = "Security and compliance", I = "Instrumentation strategy";
+
+// The first n options (default 1) are the correct ones; options are shuffled when shown.
+const Q = [
+{d:P, q:"Your team tracks work in Azure Boards and stores code in GitHub. Developers must link a commit to work item 482 from the commit message. What should the message contain?",
+ o:["`AB#482`", "`#482`", "`WI-482`", "`Fixes 482`"],
+ e:"With the Azure Boards app for GitHub connected, `AB#{id}` in a commit, pull request or issue links it to the work item. `#482` alone refers to a GitHub issue or pull request."},
+{d:P, q:"You need a dashboard widget that shows how long work items take from the moment they are created until they are completed. Which widget should you add?",
+ o:["Lead Time", "Cycle Time", "Velocity", "Sprint Burndown"],
+ e:"Lead time runs from work item creation to completion. Cycle time starts only when work on the item begins."},
+{d:P, q:"A team wants to see where work items accumulate between board columns over time so that it can find bottlenecks. Which chart should it use?",
+ o:["Cumulative flow diagram", "Velocity chart", "Sprint burndown chart", "Test results trend"],
+ e:"A cumulative flow diagram shows the count of items in each column over time; a widening band indicates a bottleneck."},
+{d:P, q:"Architecture documentation must be versioned together with the code, be reviewed through pull requests, and be readable in the Azure DevOps wiki. What should you do?",
+ o:["Keep Markdown files in the code repository and publish them as a wiki", "Create a provisioned project wiki and edit the pages in the browser", "Attach Word documents to work items", "Store the documents in a variable group"],
+ e:"Publishing code as a wiki surfaces Markdown from a repository branch, so the documentation follows the same branching and pull request process as the code."},
+{d:P, q:"A wiki page must contain a sequence diagram that is stored as text so that changes can be reviewed and versioned. What should you use?",
+ o:["A Mermaid diagram in a Markdown code block", "A PNG image exported from a drawing tool", "An embedded Excel workbook", "A YAML pipeline template"],
+ e:"Azure DevOps wikis and GitHub render Mermaid syntax, which keeps diagrams as diffable text."},
+{d:P, q:"An external incident management system must receive an HTTP POST whenever a release deployment fails in Azure DevOps. What should you configure?",
+ o:["A service hook subscription that uses Web Hooks", "A personal email notification subscription", "A dashboard widget", "A build validation branch policy"],
+ e:"Service hooks send Azure DevOps events to external services; the Web Hooks consumer posts the event payload to any HTTP endpoint."},
+{d:P, q:"Which DORA metric measures the percentage of production deployments that cause degraded service and need remediation such as a hotfix or rollback?",
+ o:["Change failure rate", "Deployment frequency", "Lead time for changes", "Time to restore service"],
+ e:"Change failure rate is failed deployments divided by total deployments. Time to restore service measures how long recovery takes, not how often failures happen."},
+{d:P, q:"A team wants pipeline run notifications posted in a Microsoft Teams channel and wants to approve pending deployments from Teams. What should you do?",
+ o:["Install the Azure Pipelines app for Microsoft Teams and subscribe the channel to the pipeline", "Install the Azure Boards app for Microsoft Teams", "Send email notifications to the channel email address", "Add a status badge to the repository README"],
+ e:"The Azure Pipelines app for Teams posts run events to a channel and lets approvers approve or reject deployments from the message."},
+
+{d:S, q:"A team deploys to production several times a day. It wants to minimise merge conflicts and keep `main` always releasable while unfinished features stay hidden from users. Which strategy should it adopt?",
+ o:["Trunk-based development with short-lived branches and feature flags", "Long-lived feature branches that are merged at each release", "GitFlow with `develop`, release and hotfix branches", "One fork per developer that is merged monthly"],
+ e:"Trunk-based development integrates small changes frequently, and feature flags decouple deploying code from releasing a feature."},
+{d:S, q:"Code must compile and pass unit tests before a pull request into `main` can be completed in Azure Repos. What should you configure?",
+ o:["A build validation branch policy on `main`", "A continuous integration trigger on `main`", "A scheduled nightly build", "A status badge on the repository"],
+ e:"A build validation policy runs a pipeline against the pull request merge result and blocks completion until it succeeds. A CI trigger only runs after the merge."},
+{d:S, q:"A Git repository contains large design and video files that change often, and cloning has become slow. What should you use?",
+ o:["Git Large File Storage (LFS)", "Git submodules", "A `.gitignore` entry for the files", "`git gc --aggressive`"],
+ e:"Git LFS stores large binaries outside the repository and keeps small pointer files in Git, so clones download only the versions they check out."},
+{d:S, q:"A repository holds millions of source files and a very long history, but no large binaries. Developers report slow clone, status and fetch operations. What should you use?",
+ o:["Scalar", "Git LFS", "GitFlow", "Annotated tags"],
+ e:"Scalar configures Git for very large repositories: partial clone, sparse checkout, the file system monitor and background maintenance."},
+{d:S, q:"A YAML pipeline builds a repository with a very long history, and only the latest commit is needed. How should you shorten the checkout?",
+ o:["Set `fetchDepth: 1` on the `checkout` step", "Set `clean: true` on the `checkout` step", "Set `persistCredentials: true` on the `checkout` step", "Set `lfs: true` on the `checkout` step"],
+ e:"`fetchDepth` performs a shallow fetch that limits how many commits are downloaded."},
+{d:S, q:"A file containing a password was committed and pushed three weeks ago. The password has been rotated. You must remove the file from the entire repository history. Which tool should you use?",
+ o:["`git filter-repo`", "`git revert`", "`git rm`", "`git reset --soft`"],
+ e:"`git filter-repo` (or BFG) rewrites history to remove the file, followed by a force push. `git revert` and `git rm` add new commits and leave the secret in earlier ones."},
+{d:S, q:"`main` must contain exactly one commit for each completed pull request and have a linear history. Which merge type should the branch policy allow?",
+ o:["Squash merge", "Merge (no fast-forward)", "Rebase and fast-forward", "Semi-linear merge"],
+ e:"Squash merge condenses the pull request into a single commit on the target branch. Rebase and fast-forward is linear but keeps every source commit."},
+{d:S, q:"In a GitHub repository, every change to files under `/infra` must be approved by the platform team before merging.", n:2,
+ o:["Add a `CODEOWNERS` file that maps `/infra/` to the platform team", "Require review from code owners in the branch protection rule or ruleset for `main`", "Give the platform team the admin role on the repository", "Add an issue template for infrastructure changes", "Enable Dependabot version updates"],
+ e:"`CODEOWNERS` assigns owners to paths, and the branch protection setting makes their approval mandatory."},
+{d:S, q:"A developer ran `git reset --hard` and lost several local commits that were never pushed. Which command lets the developer find the hashes of the lost commits?",
+ o:["`git reflog`", "`git log --oneline`", "`git stash list`", "`git fetch --all`"],
+ e:"The reflog records where `HEAD` has pointed, including commits no longer reachable from any branch, so they can be restored with `git reset` or `git cherry-pick`."},
+
+{d:B, q:"Developers consume npm packages through an Azure Artifacts feed. Every public package version they use must be saved in the feed so that it stays available even if it is removed from npmjs.com. What should you do?",
+ o:["Enable npmjs.com as an upstream source on the feed", "Create an additional feed view", "Publish the packages as Universal Packages", "Add npmjs.com as a second registry in each developer's `.npmrc`"],
+ e:"With an upstream source, the feed saves a copy of each package version the first time it is requested through the feed."},
+{d:B, q:"A CI pipeline publishes every build of a NuGet package to an Azure Artifacts feed. Other teams must see only the versions that passed full validation. What should you do?",
+ o:["Promote validated versions to the `@Release` view and have consumers use that view", "Delete every version that has not been validated", "Enable upstream sources on the feed", "Publish validated versions with a lower version number"],
+ e:"Feed views (`@Local`, `@Prerelease`, `@Release`) expose a subset of package versions; promoting a version makes it visible in that view."},
+{d:B, q:"A library is at version 2.4.1. The next release removes a public method that consumers use. According to Semantic Versioning, which version should it have?",
+ o:["3.0.0", "2.5.0", "2.4.2", "2.4.1-beta"],
+ e:"Breaking changes increment the major version. Minor is for backward-compatible features and patch for backward-compatible fixes."},
+{d:B, q:"Some UI tests fail intermittently for reasons unrelated to code changes and block pull requests. You must keep pipeline results reliable while still tracking those tests. What should you do in Azure Pipelines?",
+ o:["Enable flaky test detection in the project test management settings", "Set `continueOnError: true` on the test task", "Delete the affected tests", "Increase the job timeout"],
+ e:"Flaky test management detects or lets you mark flaky tests and excludes them from the pass percentage while still reporting them. `continueOnError` would hide real failures too."},
+{d:B, q:"A build produces a Cobertura coverage report. The Code Coverage tab of the pipeline run must show the results. Which task should you add?",
+ o:["`PublishCodeCoverageResults`", "`PublishTestResults`", "`PublishPipelineArtifact`", "`CopyFiles`"],
+ e:"`PublishCodeCoverageResults` publishes Cobertura or JaCoCo results to the run. `PublishTestResults` publishes pass/fail results, not coverage."},
+{d:B, q:"A pipeline must deploy to servers in an on-premises network that allows no inbound connections from the internet. Which agent should run the deployment job?",
+ o:["A self-hosted agent installed inside the on-premises network", "A Microsoft-hosted Ubuntu agent", "A Microsoft-hosted Windows agent", "An agentless (server) job"],
+ e:"A self-hosted agent only makes outbound connections to Azure DevOps and has line of sight to the internal servers."},
+{d:B, q:"You need build agents that use a custom image with preinstalled SDKs, scale out automatically with pipeline demand, and scale in when idle. What should you use?",
+ o:["An agent pool backed by an Azure Virtual Machine Scale Set", "The Microsoft-hosted agent pool", "A single self-hosted agent on a large virtual machine", "A deployment group"],
+ e:"Scale set agents are self-hosted agents that Azure Pipelines scales automatically from your own image. Microsoft-hosted agents cannot use a custom image."},
+{d:B, q:"Every pipeline that deploys with the production service connection must include a credential scanning step that pipeline authors cannot remove. What should you do?",
+ o:["Put the step in a template that pipelines extend, and add a Required template check to the service connection", "Document the requirement in the project wiki", "Add the step to a task group and ask teams to use it", "Store the scanning tool in a variable group"],
+ e:"An `extends` template controls the structure of the pipeline, and the Required template check stops any run that uses the resource without extending that template."},
+{d:B, q:"The YAML pipeline `Deploy` must start automatically each time the YAML pipeline `Build` completes on `main`. What should you add to `Deploy`?",
+ o:["A `pipelines` resource that references `Build` and defines a `trigger`", "A `schedules` entry with a cron expression", "A `pr` trigger for `main`", "A `repositories` resource that references the `Build` repository"],
+ e:"A pipeline resource trigger starts a pipeline when another pipeline completes, and gives access to its artifacts."},
+{d:B, q:"A monorepo contains `/web` and `/api`. The API pipeline must start only when files under `/api` change on `main`. What should you do?",
+ o:["Add a `paths` filter that includes `api` to the pipeline `trigger`", "Add a `condition` to every step in the pipeline", "Add a demand to the agent pool", "Move the API code to a long-lived branch"],
+ e:"Path filters on the CI trigger limit which changes start a run. A step condition would still start the pipeline and use an agent."},
+{d:B, q:"A nightly build must run at 02:00 UTC even when the code has not changed since the last scheduled run. What should you define?",
+ o:["A `schedules` cron entry with `always: true`", "A `schedules` cron entry with `always: false`", "A CI trigger with `batch: true`", "`trigger: none`"],
+ e:"By default a scheduled run is skipped when there are no source changes since the last scheduled run; `always: true` overrides this."},
+{d:B, q:"Several pipelines use the same database password. It is stored in Azure Key Vault and rotated monthly. Pipelines must always use the current value without anyone copying it. What should you do?",
+ o:["Create a variable group linked to the key vault and reference it from the pipelines", "Define a secret variable in each pipeline", "Store the password Base64-encoded in the YAML file", "Upload the password as a secure file"],
+ e:"A Key Vault-linked variable group fetches the latest secret values at run time, so rotation needs no pipeline change."},
+{d:B, q:"A YAML template must include a group of steps only when the `runTests` parameter is true. The decision must be made when the pipeline is compiled. Which syntax should you use?",
+ o:["`${{ if eq(parameters.runTests, true) }}`", "`$[ eq(variables.runTests, true) ]`", "`$(runTests)`", "`%RUNTESTS%`"],
+ e:"`${{ }}` template expressions are evaluated at compile time and can insert or omit YAML. `$[ ]` is evaluated at run time and `$( )` is macro substitution just before a task runs."},
+{d:B, q:"A script in job `A` calculates a version number that job `B` needs.", n:2,
+ o:["In a named step of job `A`, set the variable with `##vso[task.setvariable variable=ver;isOutput=true]`", "In job `B`, add `dependsOn: A` and map `$[ dependencies.A.outputs['setVer.ver'] ]` to a variable", "Reference `$(ver)` directly in job `B`", "Export the value as a shell environment variable in job `A`", "Declare `ver` under `parameters`"],
+ e:"Variables are scoped to a job. An output variable must be marked `isOutput=true` and then mapped in the dependent job through `dependencies`."},
+{d:B, q:"A multi-stage YAML pipeline must wait for approval from the operations team before the production stage runs. What should you do?",
+ o:["Add an Approvals check to an environment and target that environment from a deployment job", "Add an `approvals` property to the stage in the YAML file", "Set `condition: succeeded()` on the production stage", "Add a minimum number of reviewers branch policy on `main`"],
+ e:"In YAML pipelines, approvals are checks defined on resources such as environments, not in the YAML file, so pipeline authors cannot bypass them."},
+{d:B, q:"A new version must first be released to 5 percent of users, be monitored, and then be rolled out gradually to everyone. Which deployment strategy is this?",
+ o:["Canary", "Blue-green", "Recreate", "Rolling"],
+ e:"A canary release exposes a small share of users to the new version and widens exposure as confidence grows."},
+{d:B, q:"An Azure App Service app has `production` and `staging` slots. After a swap, the staging slot must still use the test database. What should you do?",
+ o:["Mark the connection string as a deployment slot setting", "Enable auto swap on the staging slot", "Store the connection string in the deployment package", "Scale out the staging slot"],
+ e:"Deployment slot settings are sticky: they stay with the slot instead of moving with the app during a swap."},
+{d:B, q:"Before swapping, you want 10 percent of production traffic for an Azure App Service app to reach the new version that runs in the `staging` slot. What should you do?",
+ o:["Set the traffic routing percentage of the staging slot to 10", "Perform a swap with preview", "Enable auto swap on the staging slot", "Scale the staging slot to one tenth of the production instances"],
+ e:"Deployment slot traffic routing (testing in production) sends a chosen percentage of requests to a non-production slot."},
+{d:B, q:"Product owners must enable a new feature for selected customers and disable it instantly without a redeployment. What should you use?",
+ o:["Feature flags managed in Azure App Configuration", "A deployment slot per customer", "A release branch per customer", "ARM template parameters"],
+ e:"The App Configuration feature manager stores flags centrally, supports targeting filters, and lets apps pick up changes at run time."},
+{d:B, q:"Before deploying a Bicep file to a production resource group, you must see which resources would be created, changed or deleted, without making any change. Which command should you run?",
+ o:["`az deployment group what-if`", "`az deployment group validate`", "`az bicep build`", "`az deployment group create --mode Complete`"],
+ e:"What-if previews the changes a deployment would make. `validate` only checks that the template is valid, and `bicep build` only compiles to ARM JSON."},
+{d:B, q:"An ARM template deployment must delete any resource in the resource group that is not defined in the template. What should you use?",
+ o:["Complete deployment mode", "Incremental deployment mode", "A what-if operation", "A CanNotDelete resource lock"],
+ e:"Complete mode removes resources that exist in the resource group but not in the template. Incremental mode, the default, leaves them unchanged."},
+{d:B, q:"You must audit and enforce operating system settings inside Azure VMs and Azure Arc-enabled servers, and report compliance through Azure Policy. What should you use?",
+ o:["Azure Machine Configuration", "Azure Deployment Environments", "The Custom Script Extension", "Azure App Configuration"],
+ e:"Azure Machine Configuration (formerly Azure Policy guest configuration) audits and applies in-guest settings as code on Azure and Arc-enabled machines."},
+{d:B, q:"Development teams must be able to create application infrastructure on demand from a catalog of infrastructure-as-code templates approved by the platform team, within governed projects. What should you use?",
+ o:["Azure Deployment Environments", "Azure Machine Configuration", "Azure Automation State Configuration", "Azure Artifacts"],
+ e:"Azure Deployment Environments gives developers self-service environments created from catalog templates, with subscriptions, identities and permissions controlled by the platform team."},
+{d:B, q:"Several GitHub repositories repeat the same build and test jobs. You want to define the jobs once and call them from each repository's workflow. What should you create?",
+ o:["A reusable workflow that is triggered by `workflow_call`", "A workflow that is triggered by `workflow_dispatch`", "A workflow that is triggered by `repository_dispatch`", "A workflow that is triggered by `schedule`"],
+ e:"A reusable workflow declares `on: workflow_call` and is referenced with `uses:` at job level in the caller workflow."},
+{d:B, q:"A GitHub Actions workflow must run the same test job on Ubuntu, Windows and macOS against three Node.js versions without duplicating the job. What should you use?",
+ o:["`strategy.matrix`", "`needs`", "`concurrency`", "`services`"],
+ e:"A matrix strategy creates one job run for each combination of the listed variables."},
+{d:B, q:"Each run of a pipeline spends several minutes restoring the same npm packages. You must shorten the runs without changing the dependencies. What should you do?",
+ o:["Add the `Cache@2` task with a key based on `package-lock.json`", "Publish `node_modules` as a pipeline artifact in every run", "Increase the job timeout", "Set `fetchDepth: 0` on the `checkout` step"],
+ e:"Pipeline caching restores the package cache from an earlier run when the key, here the lock file hash, is unchanged."},
+{d:B, q:"Container images in Azure Container Registry must be rebuilt automatically when their base image receives operating system patches. What should you configure?",
+ o:["An ACR task with a base image update trigger", "Geo-replication of the registry", "A retention policy for untagged manifests", "A repository-scoped token"],
+ e:"ACR Tasks track base image dependencies and can trigger a rebuild when the base image is updated."},
+{d:B, q:"A YAML pipeline must deploy a web application to 20 virtual machines, updating a few at a time so that the application stays available. What should you do?",
+ o:["Register the VMs as resources in an environment and use a deployment job with the `rolling` strategy", "Use a deployment job with the `runOnce` strategy on a Microsoft-hosted agent", "Add the VMs to a variable group", "Create one stage per VM and run all the stages in parallel"],
+ e:"The rolling strategy on an environment with virtual machine resources updates a fixed number or percentage of targets in each iteration."},
+{d:B, q:"A production deployment may proceed only if no Azure Monitor alerts are active for the application after the staging deployment. Which check should you add to the production environment?",
+ o:["Query Azure Monitor alerts", "Business hours", "Exclusive lock", "Required template"],
+ e:"The Query Azure Monitor alerts check evaluates alert rules and holds the stage until they are healthy."},
+{d:B, q:"Several runs of a YAML pipeline are queued. Two runs must never deploy to the production environment at the same time. What should you add to the environment?",
+ o:["An Exclusive lock check", "A Business hours check", "An Approvals check with a single approver", "A Required template check"],
+ e:"The exclusive lock check lets only one run at a time use the resource; `lockBehavior` controls whether waiting runs queue sequentially or only the latest proceeds."},
+
+{d:C, q:"A pipeline deploys to Azure through a service connection whose service principal secret expires and has to be rotated by hand. You must remove the need to manage any secret. What should you do?",
+ o:["Convert the service connection to workload identity federation", "Extend the secret lifetime to two years", "Store the secret in a variable group", "Replace the service connection with a personal access token"],
+ e:"Workload identity federation uses a trust between Microsoft Entra ID and Azure DevOps to issue short-lived tokens, so no secret is stored or rotated."},
+{d:C, q:"A GitHub Actions workflow must sign in to Azure without any long-lived credential stored in GitHub.", n:2,
+ o:["Add a federated credential for the repository to the Microsoft Entra application or managed identity", "Grant the workflow the `id-token: write` permission and sign in with `azure/login` using the client, tenant and subscription IDs", "Store the client secret as a repository secret", "Store a publish profile as an environment secret", "Store a personal access token as an organization secret"],
+ e:"With OpenID Connect, GitHub issues a token for the workflow run, and Microsoft Entra ID exchanges it for an access token based on the federated credential."},
+{d:C, q:"An app on Azure App Service reads secrets from Azure Key Vault. No credential may be stored in code or in app settings. What should you do?",
+ o:["Enable a managed identity for the app and grant it access to the key vault", "Create a service principal and store its client secret in app settings", "Store the secrets in the repository in an encrypted file", "Use a shared access signature token"],
+ e:"A managed identity is an Azure-managed identity for the app, so it can authenticate to Key Vault without any stored credential."},
+{d:C, q:"You must stop developers from pushing commits that contain credentials to GitHub repositories. What should you enable?",
+ o:["Secret scanning with push protection", "Dependabot alerts", "Code scanning with CodeQL", "A `CODEOWNERS` file"],
+ e:"Push protection scans pushes for supported secret types and blocks them before the secret reaches the repository."},
+{d:C, q:"A GitHub repository must automatically receive pull requests that upgrade dependencies with known vulnerabilities to a patched version. What should you enable?",
+ o:["Dependabot security updates", "Secret scanning", "Code scanning with CodeQL", "The dependency review action"],
+ e:"Dependabot security updates open pull requests for vulnerable dependencies. Dependency review only reports vulnerable dependencies introduced by a pull request."},
+{d:C, q:"Each pull request in a GitHub repository must be analysed for vulnerabilities in the source code, such as SQL injection. What should you configure?",
+ o:["Code scanning with CodeQL", "Dependabot version updates", "Secret scanning", "Required signed commits"],
+ e:"CodeQL performs static analysis of the code itself. Dependabot covers third-party dependencies and secret scanning covers credentials."},
+{d:C, q:"A Bash step in a YAML pipeline reads the secret variable `apiKey`, but `$APIKEY` is empty at run time. What should you do?",
+ o:["Map the secret to an environment variable in the `env` section of the step", "Mark the variable as read-only", "Set `isOutput=true` on the variable", "Rename the variable to uppercase"],
+ e:"Secret variables are not exposed to scripts as environment variables automatically; each step that needs one must map it explicitly."},
+{d:C, q:"A build needs a code-signing certificate file. The file must not be in the repository and must be usable only by authorised pipelines. What should you do?",
+ o:["Upload the file as a secure file in the Library and use the `DownloadSecureFile` task", "Commit the file to a branch that only administrators can read", "Publish the file as a pipeline artifact", "Paste the file content into a non-secret pipeline variable"],
+ e:"Secure files are stored encrypted, can be restricted with pipeline permissions and checks, and are downloaded to the agent only for the run."},
+{d:C, q:"The security team wants one place to view code, secret and infrastructure-as-code findings across Azure DevOps and GitHub. What should you use?",
+ o:["DevOps security in Microsoft Defender for Cloud", "Application Insights", "Azure Advisor", "Azure DevOps Analytics views"],
+ e:"Defender for Cloud connects to Azure DevOps, GitHub and GitLab and shows the security posture of repositories and pipelines in one view."},
+{d:C, q:"A service that integrates with a GitHub organization needs API access that is not tied to a user account, uses short-lived tokens and has fine-grained permissions. What should you use?",
+ o:["A GitHub App", "A classic personal access token of an organization owner", "A deploy key", "An OAuth app"],
+ e:"A GitHub App acts as its own identity with granular permissions and installation tokens that expire after an hour. Personal access tokens and OAuth apps act as a user."},
+
+{d:I, q:"A microservices application is slow. You need a visual view of its components, their dependencies, and where failures and latency occur. What should you use?",
+ o:["Application Map in Application Insights", "Azure Advisor", "Azure Service Health", "The Azure activity log"],
+ e:"Application Map builds a topology from distributed tracing telemetry and shows call volume, latency and failure rate for each dependency."},
+{d:I, q:"Which KQL query returns the number of failed requests per operation during the last hour in Application Insights?",
+ o:["`requests | where timestamp > ago(1h) and success == false | summarize count() by operation_Name`", "`requests | where timestamp > ago(1h) | project operation_Name`", "`exceptions | take 100`", "`requests | summarize avg(duration) by bin(timestamp, 1h)`"],
+ e:"`where` filters to failed requests in the time range, and `summarize count() by` groups the count by operation name."},
+{d:I, q:"You must monitor CPU and memory use of the nodes and containers in an Azure Kubernetes Service cluster and collect container logs. What should you enable?",
+ o:["Container insights", "VM insights", "Application Insights availability tests", "Network Watcher"],
+ e:"Container insights collects performance metrics and logs from AKS nodes, controllers and containers."},
+{d:I, q:"When an Azure Monitor alert fires, the on-call engineer must receive an SMS message and a webhook must create a ticket. What should you configure?",
+ o:["An action group", "A diagnostic setting", "A data collection rule", "A workbook"],
+ e:"An action group defines the notifications and actions that an alert rule triggers."},
+{d:I, q:"You must be alerted when the public endpoint of a web app stops responding from several geographic locations. What should you configure?",
+ o:["An Application Insights availability test", "Live Metrics", "Application Insights Profiler", "Snapshot Debugger"],
+ e:"Availability tests send requests to an endpoint from multiple locations at regular intervals and can alert on failures."},
+{d:I, q:"Application Insights ingestion costs are too high for a high-traffic application, but metrics must stay statistically accurate. What should you do?",
+ o:["Configure sampling", "Increase the data retention period", "Turn off Live Metrics", "Create a second Application Insights resource for the same app"],
+ e:"Sampling keeps a representative share of telemetry and adjusts the counts, which lowers ingestion volume while keeping metrics approximately correct."},
+];
+console.assert(Q.every(q => q.o.length > (q.n || 1) && new Set(q.o).size === q.o.length && q.e), "bad question data");
+
+const app = document.getElementById("app");
+const fmt = s => s.replace(/[&<>]/g, c => `&#${c.charCodeAt()};`).replace(/`([^`]+)`/g, "<code>$1</code>");
+const shuffle = a => {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+};
+let qs, i, tally;
+
+function start() { qs = shuffle([...Q]); i = 0; tally = {}; show(); }
+
+function show() {
+  const q = qs[i];
+  if (!q) return done();
+  const n = q.n || 1, opts = shuffle(q.o.map((t, k) => ({ t, ok: k < n })));
+  app.innerHTML = `<small>Question ${i + 1} of ${qs.length} · ${q.d}</small>
+<form><fieldset><legend>${fmt(q.q)}${n > 1 ? ` Which ${n} actions should you perform?` : ""}</legend>${opts.map(o =>
+    `<label><input type="${n > 1 ? "checkbox" : "radio"}" name="o"> ${fmt(o.t)}</label>`).join("")}</fieldset>
+<button>Check</button></form><p role="status"></p>`;
+  const form = app.querySelector("form"), inputs = [...form.querySelectorAll("input")];
+  form.onsubmit = e => {
+    e.preventDefault();
+    if (!inputs.some(x => x.checked)) return;
+    const ok = inputs.every((x, k) => x.checked === opts[k].ok);
+    inputs.forEach((x, k) => {
+      x.disabled = true;
+      if (opts[k].ok) x.parentNode.className = "ok";
+      else if (x.checked) x.parentNode.className = "bad";
+    });
+    const t = tally[q.d] ||= [0, 0];
+    t[0] += ok; t[1]++;
+    app.querySelector("[role=status]").innerHTML = `<b>${ok ? "Correct." : "Incorrect."}</b> ${fmt(q.e)}`;
+    form.querySelector("button").textContent = i + 1 < qs.length ? "Next" : "Finish";
+    form.onsubmit = e => { e.preventDefault(); i++; show(); };
+  };
+}
+
+function done() {
+  const right = Object.values(tally).reduce((s, t) => s + t[0], 0), pct = Math.round(100 * right / qs.length);
+  app.innerHTML = `<h1>${pct}% – ${pct >= 70 ? "pass" : "keep studying"}</h1>
+<p>${right} of ${qs.length} correct. The real exam needs 700 of 1000.</p>
+<ul>${Object.entries(tally).map(([d, t]) => `<li>${d}: ${t[0]}/${t[1]}</li>`).join("")}</ul>
+<button onclick="start()">Restart</button>`;
+}
+
+start();
+</script>
